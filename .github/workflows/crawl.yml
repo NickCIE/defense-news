@@ -1,0 +1,39 @@
+name: 뉴스 수집 및 배포
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'   # 2시간마다 실행
+  workflow_dispatch:          # 수동 실행 버튼
+
+permissions:
+  contents: write
+
+jobs:
+  crawl-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: 뉴스 수집 및 HTML 생성
+        env:
+          NYT_API_KEY: ${{ secrets.NYT_API_KEY }}
+        run: python generate.py
+
+      - name: GitHub Pages 배포
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          include_files: 방산뉴스_대시보드.html
+          destination_dir: .
