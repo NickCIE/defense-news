@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>방산 뉴스 대시보드</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f0f6fc;
+      letter-spacing: -0.3px;
+    }
+    .header-sector {
+      font-size: 11px;
+      background: #1f3a5c;
+      color: #79c0ff;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .stat-chip {
+      font-size: 12px;
+      color: #8b949e;
+    }
+    .stat-chip span {
+      color: #f0f6fc;
+      font-weight: 600;
+    }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #21262d;
+    }
+    .filter-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      padding: 5px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .filter-btn:hover { border-color: #58a6ff; color: #c9d1d9; }
+    .filter-btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+    .divider { width: 1px; height: 20px; background: #30363d; margin: 0 4px; }
+
+    .toolbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+    .crawl-btn {
+      background: #238636;
+      border: 1px solid #2ea043;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .crawl-btn:hover { background: #2ea043; }
+    .crawl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .last-updated {
+      font-size: 11px;
+      color: #8b949e;
+    }
+
+    /* ── Search ── */
+    .search-bar {
+      padding: 10px 24px;
+      border-bottom: 1px solid #21262d;
+    }
+    .search-bar input {
+      width: 100%;
+      max-width: 400px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-bar input:focus { border-color: #58a6ff; }
+    .search-bar input::placeholder { color: #484f58; }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+      padding: 18px 24px 40px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .card:hover {
+      border-color: #58a6ff;
+      transform: translateY(-1px);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 10px;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .card-date {
+      font-size: 11px;
+      color: #8b949e;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f0f6fc;
+      line-height: 1.45;
+    }
+    .card-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .card-title a:hover { color: #58a6ff; }
+    .card-summary {
+      font-size: 12px;
+      color: #8b949e;
+      line-height: 1.55;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .card-link {
+      font-size: 11px;
+      color: #58a6ff;
+      text-decoration: none;
+    }
+    .card-link:hover { text-decoration: underline; }
+
+    /* ── Empty / Loading ── */
+    .placeholder {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 0;
+      color: #484f58;
+      font-size: 14px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Badge colors ── */
+    .b-reuters         { background: #7d3c0010; color: #e8a87c; border: 1px solid #7d3c0040; }
+    .b-cnbc            { background: #00308710; color: #79c0ff; border: 1px solid #00308740; }
+    .b-nyt             { background: #22222210; color: #c9d1d9; border: 1px solid #44444440; }
+    .b-breaking-defense{ background: #8b000010; color: #ff7b7b; border: 1px solid #8b000040; }
+    .b-the-war-zone    { background: #4a000010; color: #ffa657; border: 1px solid #4a000040; }
+    .b-defense-one     { background: #1a3a5c10; color: #79c0ff; border: 1px solid #1a3a5c60; }
+    .b-연합뉴스         { background: #0066cc10; color: #79c0ff; border: 1px solid #0066cc40; }
+    .b-뉴시스           { background: #cc000010; color: #ff7b7b; border: 1px solid #cc000040; }
+    .b-조선비즈         { background: #00339910; color: #a5d6ff; border: 1px solid #00339940; }
+    .b-한국경제         { background: #ff660010; color: #ffa657; border: 1px solid #ff660040; }
+    .b-new-york-times  { background: #22222210; color: #c9d1d9; border: 1px solid #44444440; }
+    .b-default         { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1f6feb;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>방산 뉴스 대시보드</h1>
+  <span class="header-sector">Defense</span>
+  <div class="header-right">
+    <div class="stat-chip">총 <span id="totalCount">—</span>건</div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="filter-group" id="langFilters">
+    <button class="filter-btn active" data-lang="">전체</button>
+    <button class="filter-btn" data-lang="ko">국내</button>
+    <button class="filter-btn" data-lang="en">외신</button>
+  </div>
+  <div class="divider"></div>
+  <div class="filter-group" id="sourceFilters"></div>
+  <div class="toolbar-right">
+    <span class="last-updated" id="lastUpdated">—</span>
+    <button class="crawl-btn" id="crawlBtn" onclick="triggerCrawl()">새로 수집</button>
+  </div>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="제목 / 요약 검색..." oninput="renderCards()" />
+</div>
+
+<div class="grid" id="cardGrid">
+  <div class="placeholder"><div class="spinner"></div><br/>기사를 불러오는 중...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let allArticles = [];
+  let activeLang = "";
+  let activeSource = "";
+
+  const BADGE_CLASS = {
+    "Reuters":         "b-reuters",
+    "CNBC":            "b-cnbc",
+    "New York Times":  "b-new-york-times",
+    "Breaking Defense":"b-breaking-defense",
+    "The War Zone":    "b-the-war-zone",
+    "Defense One":     "b-defense-one",
+    "연합뉴스":          "b-연합뉴스",
+    "뉴시스":            "b-뉴시스",
+    "조선비즈":          "b-조선비즈",
+    "한국경제":          "b-한국경제",
+  };
+
+  function badgeClass(source) {
+    return BADGE_CLASS[source] || "b-default";
+  }
+
+  function relativeTime(iso) {
+    try {
+      const diff = (Date.now() - new Date(iso)) / 1000;
+      if (diff < 3600)  return `${Math.floor(diff / 60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+      if (diff < 172800) return "어제";
+      const d = new Date(iso);
+      return `${d.getMonth()+1}/${d.getDate()}`;
+    } catch { return ""; }
+  }
+
+  function renderCards() {
+    const query = document.getElementById("searchInput").value.toLowerCase();
+    const grid = document.getElementById("cardGrid");
+
+    let filtered = allArticles.filter(a => {
+      if (activeLang   && a.language !== activeLang)   return false;
+      if (activeSource && a.source  !== activeSource)  return false;
+      if (query) {
+        const haystack = (a.title + " " + a.summary).toLowerCase();
+        if (!haystack.includes(query)) return false;
+      }
+      return true;
+    });
+
+    document.getElementById("totalCount").textContent = filtered.length;
+
+    if (!filtered.length) {
+      grid.innerHTML = '<div class="placeholder">표시할 기사가 없습니다.</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(a => `
+      <div class="card">
+        <div class="card-top">
+          <span class="badge ${badgeClass(a.source)}">${a.source}</span>
+          <span class="card-date">${relativeTime(a.published)}</span>
+        </div>
+        <div class="card-title"><a href="${a.url}" target="_blank" rel="noopener">${escHtml(a.title)}</a></div>
+        ${a.summary ? `<div class="card-summary">${escHtml(a.summary)}</div>` : ""}
+        <div class="card-footer">
+          <a class="card-link" href="${a.url}" target="_blank" rel="noopener">원문 보기 →</a>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function escHtml(s) {
+    return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function buildSourceFilters(sources) {
+    const container = document.getElementById("sourceFilters");
+    container.innerHTML = sources.map(s =>
+      `<button class="filter-btn" data-source="${s.source}">${s.source}</button>`
+    ).join("");
+
+    container.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.onclick = () => {
+        activeSource = btn.dataset.source === activeSource ? "" : btn.dataset.source;
+        container.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        if (activeSource) btn.classList.add("active");
+        renderCards();
+      };
+    });
+  }
+
+  document.getElementById("langFilters").querySelectorAll(".filter-btn").forEach(btn => {
+    btn.onclick = () => {
+      activeLang = btn.dataset.lang;
+      document.querySelectorAll("#langFilters .filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderCards();
+    };
+  });
+
+  async function loadArticles() {
+    const [articlesRes, sourcesRes, statsRes] = await Promise.all([
+      fetch("/api/articles"),
+      fetch("/api/sources"),
+      fetch("/api/stats"),
+    ]);
+    allArticles = await articlesRes.json();
+    const sources = await sourcesRes.json();
+    const stats   = await statsRes.json();
+
+    buildSourceFilters(sources);
+    if (stats.last_crawled) {
+      document.getElementById("lastUpdated").textContent =
+        "마지막 수집: " + relativeTime(stats.last_crawled);
+    }
+    renderCards();
+  }
+
+  async function triggerCrawl() {
+    const btn = document.getElementById("crawlBtn");
+    btn.disabled = true;
+    btn.textContent = "수집 중...";
+    try {
+      const res = await fetch("/api/crawl", { method: "POST" });
+      const data = await res.json();
+      showToast(`신규 ${data.new}건 수집 완료`);
+      await loadArticles();
+    } catch(e) {
+      showToast("수집 중 오류 발생");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "새로 수집";
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  // 초기 로드 + 5분마다 자동 갱신
+  loadArticles();
+  setInterval(loadArticles, 5 * 60 * 1000);
+</script>
+</body>
+</html>
