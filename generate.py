@@ -255,4 +255,5 @@ if __name__ == "__main__":
     html = generate_html(articles)
     OUT_PATH.write_text(html, encoding="utf-8")
     print(f"저장 완료: {OUT_PATH}")
-    webbrowser.open(OUT_PATH.as_uri())
+    if not os.getenv("CI"):
+        webbrowser.open(OUT_PATH.as_uri())
